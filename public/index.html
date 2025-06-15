@@ -2,26 +2,26 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>チャット</title>
-  <style>
-    body { font-family: sans-serif; }
-    #messages { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
-    #messages li.system { color: gray; font-style: italic; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>マルチルームチャット</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="nameEntry">
-    <input id="nameInput" type="text" placeholder="ユーザー名を入力してください" />
-    <button id="nameSetBtn">確定</button>
+  <div id="container">
+    <div id="room-list">
+      <h3>参加中</h3>
+      <ul id="rooms"></ul>
+      <input id="new-room" placeholder="新しいルーム名" />
+      <button id="create-room">作成</button>
+    </div>
+    <div id="chat-area">
+      <ul id="messages"></ul>
+      <form id="form">
+        <input id="input" autocomplete="off" placeholder="メッセージ"/>
+        <button>送信</button>
+      </form>
+    </div>
   </div>
-
-  <ul id="messages" style="display:none;"></ul>
-
-  <form id="form" style="display:none;">
-    <input id="input" autocomplete="off" />
-    <button>送信</button>
-  </form>
-
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>

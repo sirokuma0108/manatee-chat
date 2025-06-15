@@ -1,49 +1,52 @@
 const socket = io();
+let currentRoom = "";
+let uuid = "";
 
-let myUUID = null;
-let myName = "";
-
-const nameEntry = document.getElementById("nameEntry");
-const nameInput = document.getElementById("nameInput");
-const nameSetBtn = document.getElementById("nameSetBtn");
-
-const messages = document.getElementById("messages");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-
-nameSetBtn.addEventListener("click", () => {
-  const name = nameInput.value.trim();
-  if (!name) {
-    alert("ユーザー名を入力してください");
-    return;
-  }
-  myName = name;
+socket.on("your uuid", (id) => {
+  uuid = id;
+  const name = prompt("表示名を入力してください") || "名無し";
   socket.emit("set name", name);
-  nameEntry.style.display = "none";
-  messages.style.display = "block";
-  form.style.display = "block";
 });
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (!input.value.trim()) return;
-  socket.emit("chat message", { text: input.value });
-  input.value = "";
+socket.on("room joined", (room, roomList, messages) => {
+  currentRoom = room;
+  const roomsUl = document.getElementById("rooms");
+  roomsUl.innerHTML = "";
+  roomList.forEach((r) => {
+    const li = document.createElement("li");
+    li.textContent = r;
+    li.style.cursor = "pointer";
+    li.onclick = () => socket.emit("join room", r);
+    roomsUl.appendChild(li);
+  });
+
+  const msgUl = document.getElementById("messages");
+  msgUl.innerHTML = "";
+  messages.forEach((m) => {
+    const li = document.createElement("li");
+    li.textContent = m;
+    msgUl.appendChild(li);
+  });
 });
 
-socket.on("your uuid", (uuid) => {
-  myUUID = uuid;
-  console.log("あなたのUUID:", myUUID);
-});
-
-socket.on("chat message", (msg) => {
+socket.on("chat message", (room, msg) => {
+  if (room !== currentRoom) return;
   const li = document.createElement("li");
-  if (msg.system) {
-    li.classList.add("system");
-    li.textContent = msg.text;
-  } else {
-    li.textContent = msg.text;
+  li.textContent = msg;
+  document.getElementById("messages").appendChild(li);
+});
+
+document.getElementById("create-room").onclick = () => {
+  const room = document.getElementById("new-room").value.trim();
+  if (room) socket.emit("create room", room);
+  document.getElementById("new-room").value = "";
+};
+
+document.getElementById("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("input");
+  if (input.value && currentRoom) {
+    socket.emit("chat message", { room: currentRoom, message: input.value });
+    input.value = "";
   }
-  messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
 });
