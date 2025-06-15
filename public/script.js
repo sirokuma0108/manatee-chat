@@ -4,11 +4,11 @@ const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
 
-// 接続時にユーザー名を聞く
 let userName = "";
 while (!userName) {
   userName = prompt("ユーザー名を入力してください");
 }
+console.log("ユーザー名送信:", userName);
 socket.emit("set name", userName);
 
 form.addEventListener("submit", (e) => {
