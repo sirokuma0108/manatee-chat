@@ -2,30 +2,29 @@ const socket = io();
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
+const usernameInput = document.getElementById("username");
+const iconUpload = document.getElementById("iconUpload");
 
-let user = { name: "", icon: "" };
-
-// ユーザー設定ボタン
-document.getElementById("setUser").onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const iconFile = document.getElementById("icon").files[0];
-
-  if (!name) return alert("名前を入力してください");
-
-  let iconUrl = "";
-  if (iconFile) {
-    const formData = new FormData();
-    formData.append("icon", iconFile);
-    const res = await fetch("/upload", { method: "POST", body: formData });
-    const data = await res.json();
-    iconUrl = data.url;
-  }
-
-  user = { name, icon: iconUrl };
-  socket.emit("set user", user);
+let user = {
+  name: "",
+  icon: "",
 };
 
-// メッセージ送信
+function askUserInfo() {
+  let name = "";
+  while (!name) {
+    name = prompt("ユーザー名を入力してください");
+  }
+  user.name = name;
+}
+
+askUserInfo();
+sendUserData();
+
+function sendUserData() {
+  socket.emit("set user", user);
+}
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   if (input.value) {
@@ -34,26 +33,45 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// メッセージ受信
-socket.on("chat message", (msg) => {
+socket.on("chat message", (data) => {
   const li = document.createElement("li");
+  const container = document.createElement("div");
+  container.classList.add("chat-message");
 
-  if (msg.system) {
-    li.textContent = msg.text;
-    li.classList.add("system");
-  } else {
-    li.classList.add("msg");
-    const icon = document.createElement("img");
-    icon.src = msg.icon || "https://placehold.co/32x32";
-    icon.alt = "icon";
-
-    const text = document.createElement("span");
-    text.textContent = `${msg.user} (${msg.time}): ${msg.text}`;
-
-    li.appendChild(icon);
-    li.appendChild(text);
+  if (data.icon) {
+    const img = document.createElement("img");
+    img.src = data.icon;
+    container.appendChild(img);
   }
 
+  const text = document.createElement("span");
+  text.textContent = `${data.name}: ${data.message}`;
+  container.appendChild(text);
+
+  li.appendChild(container);
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
+});
+
+usernameInput.addEventListener("change", () => {
+  user.name = usernameInput.value;
+  sendUserData();
+});
+
+iconUpload.addEventListener("change", () => {
+  const file = iconUpload.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("icon", file);
+
+  fetch("/upload", {
+    method: "POST",
+    body: formData,
+  })
+    .then(res => res.json())
+    .then(data => {
+      user.icon = data.filePath;
+      sendUserData();
+    });
 });
