@@ -97,4 +97,4 @@ loginBtn.addEventListener("click", () => {
   socket.emit("change name", { name: userName, icon: userIcon });
 
   loginArea.style.display = "none";
-  chatArea.style.display = "block";
+  chatArea.style.display = "block";})
