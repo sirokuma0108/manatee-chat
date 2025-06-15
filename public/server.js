@@ -13,15 +13,16 @@ app.use(express.static("public"));
 io.on("connection", (socket) => {
     console.log("ユーザーが接続しました");
 
-    // 過去のチャットログを読み込んで送信
-    fs.readFile("chatlog.txt", "utf-8", (err, data) => {
-        if (!err && data) {
-            const lines = data.trim().split("\n");
-            lines.forEach(line => {
-                socket.emit("chat message", line);
-            });
-        }
-    });
+    // 過去ログ送信
+fs.readFile("chatlog.txt", "utf-8", (err, data) => {
+    if (!err && data) {
+        const lines = data.trim().split("\n");
+        lines.forEach(line => {
+            socket.emit("chat message", { text: line, past: true });
+        });
+    }
+});
+
 
     // メッセージ受信
     socket.on("chat message", (msg) => {
