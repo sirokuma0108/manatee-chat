@@ -1,22 +1,13 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const fs = require("fs");
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.use(express.static("public"));
-
 io.on("connection", (socket) => {
-  console.log("ユーザーが接続しました");
+  console.log("ユーザーが接続しました:", socket.id);
 
   let userName = "";
 
-  // ユーザー名セット受信
   socket.on("set name", (name) => {
     userName = name || "名無し";
+    console.log(`ユーザー名セット: ${userName}`);
+
+    // 入室メッセージを本人と他ユーザーに送る
     socket.emit("chat message", `[サーバー] ようこそ、${userName}さん！`);
     socket.broadcast.emit("chat message", `[サーバー] ${userName}さんが入室しました`);
   });
@@ -36,11 +27,6 @@ io.on("connection", (socket) => {
     if (userName) {
       io.emit("chat message", `[サーバー] ${userName}さんが退出しました`);
     }
-    console.log("ユーザーが切断しました");
+    console.log("ユーザーが切断しました:", userName);
   });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`サーバー起動中: http://localhost:${PORT}`);
 });
