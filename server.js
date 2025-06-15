@@ -1,70 +1,97 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const fs = require("fs");
 const multer = require("multer");
+const fs = require("fs");
 const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// アップロード用の設定
 const upload = multer({
-  dest: path.join(__dirname, "public/uploads"),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MBまで
+  dest: path.join(__dirname, "public", "uploads"),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MBまで
 });
 
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
-// アイコンアップロードエンドポイント
+// アイコンアップロード用エンドポイント
 app.post("/upload", upload.single("icon"), (req, res) => {
-  if (!req.file) return res.status(400).send("ファイルがありません");
+  if (!req.file) return res.status(400).json({ error: "ファイルがありません" });
+
+  // アップロードされたファイルを public/uploads にリネームして保存
   const ext = path.extname(req.file.originalname);
-  const newPath = req.file.path + ext;
+  const newPath = path.join(req.file.destination, req.file.filename + ext);
   fs.renameSync(req.file.path, newPath);
-  const fileUrl = "/uploads/" + path.basename(newPath);
-  res.send({ url: fileUrl });
+
+  // クライアントへ新しいファイルパスを返す
+  res.json({ path: `/uploads/${req.file.filename + ext}` });
 });
+
+// ユーザー名とアイコンを記憶するためのマップ
+const users = new Map();
 
 io.on("connection", (socket) => {
-  console.log("接続:", socket.id);
-  let user = { name: "名無し", icon: null };
+  console.log("ユーザーが接続しました:", socket.id);
 
-  socket.on("set user", (data) => {
-    user.name = data.name || "名無し";
-    user.icon = data.icon || null;
+  users.set(socket.id, { name: "名無し", icon: "" });
+
+  socket.on("set user info", (data) => {
+    users.set(socket.id, {
+      name: data.name || "名無し",
+      icon: data.icon || "",
+    });
+
+    console.log(`ユーザー情報設定: ${data.name} (${socket.id})`);
 
     socket.emit("chat message", {
-      system: true,
-      text: `[サーバー] ようこそ、${user.name}さん！`,
+      name: "サーバー",
+      icon: "",
+      message: `ようこそ、${data.name}さん！`,
     });
 
     socket.broadcast.emit("chat message", {
-      system: true,
-      text: `[サーバー] ${user.name}さんが入室しました`,
+      name: "サーバー",
+      icon: "",
+      message: `${data.name}さんが入室しました`,
     });
   });
 
-  socket.on("chat message", (msg) => {
-    const time = new Date().toLocaleTimeString();
+  socket.on("chat message", (msgText) => {
+    const user = users.get(socket.id) || { name: "名無し", icon: "" };
+    const timestamp = new Date().toISOString().replace("T", " ").replace("Z", "");
+    const logLine = `[${timestamp}] ${user.name}: ${msgText}`;
+
+    // ログ保存
+    fs.appendFile("chatlog.txt", logLine + "\n", (err) => {
+      if (err) console.error("ログ保存エラー:", err);
+    });
+
+    // 全体に送信
     io.emit("chat message", {
-      user: user.name,
+      name: user.name,
       icon: user.icon,
-      time,
-      text: msg,
+      message: msgText,
     });
   });
 
   socket.on("disconnect", () => {
-    io.emit("chat message", {
-      system: true,
-      text: `[サーバー] ${user.name}さんが退出しました`,
-    });
-    console.log("切断:", user.name);
+    const user = users.get(socket.id);
+    if (user) {
+      io.emit("chat message", {
+        name: "サーバー",
+        icon: "",
+        message: `${user.name}さんが退出しました`,
+      });
+      users.delete(socket.id);
+    }
+    console.log("ユーザー切断:", socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`サーバー起動: http://localhost:${PORT}`);
+  console.log(`サーバーが起動しました: http://localhost:${PORT}`);
 });
