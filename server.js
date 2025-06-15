@@ -3,103 +3,80 @@ const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
 const path = require("path");
-const multer = require("multer");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-
-// アップロード保存先とファイル名の設定
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(__dirname, "public", "uploads");
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      // オリジナルファイル名にタイムスタンプを付与
-      const ext = path.extname(file.originalname);
-      cb(null, `${Date.now()}${ext}`);
-    }
-  }),
-  limits: { fileSize: 1024 * 1024 * 5 }, // 5MBまで
-  fileFilter: (req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/gif"];
-    if (allowed.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("画像ファイルのみ許可されています"));
-    }
-  }
-});
-
-app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
-
-// 画像アップロード用API
-app.post("/upload-icon", upload.single("icon"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "ファイルがアップロードされていません" });
-  }
-  // アップロードされた画像のパス（クライアントがアクセス可能なパス）
-  const imagePath = `/uploads/${req.file.filename}`;
-  res.json({ path: imagePath });
-});
+app.use(express.static("public"));
 
 io.on("connection", (socket) => {
   console.log("ユーザーが接続しました:", socket.id);
 
   let userName = "";
-  let userIcon = C:\Users\kosei\Downloads\初期アイコン.webp; // デフォルトアイコン（publicに置いておく）
+  let userIcon = "/初期アイコン.webp";  // デフォルトアイコン
 
-  socket.on("set name", (name, isRename) => {
-    const oldName = userName;
-    userName = name || "名無し";
+  socket.on("set name", (data) => {
+    userName = data.name || "名無し";
+    userIcon = data.icon || "/初期アイコン.webp";
 
-    if (isRename && oldName && oldName !== userName) {
-      socket.emit("chat message", `[サーバー] ${oldName}さんが${userName}に名前を変更しました。`);
-      socket.broadcast.emit("chat message", `[サーバー] ${oldName}さんが名前を変更しました`);
-    } else {
-      socket.emit("chat message", `[サーバー] ようこそ、${userName}さん！`);
-      socket.broadcast.emit("chat message", `[サーバー] ${userName}さんが入室しました`);
-    }
-  });
+    console.log(`ユーザー名セット: ${userName}, アイコン: ${userIcon}`);
 
-  socket.on("set icon", (iconPath) => {
-    userIcon = iconPath || "/default-icon.png";
-    socket.emit("chat message", `[サーバー] アイコンを変更しました。`);
-    socket.broadcast.emit("chat message", `[サーバー] ${userName}さんがアイコンを変更しました`);
+    socket.emit("chat message", {
+      text: `[サーバー] ようこそ、${userName}さん！`,
+      icon: "/初期アイコン.webp",
+      system: true,
+    });
+
+    socket.broadcast.emit("chat message", {
+      text: `[サーバー] ${userName}さんが入室しました`,
+      icon: "/初期アイコン.webp",
+      system: true,
+    });
   });
 
   socket.on("chat message", (msg) => {
-    const timestamp = new Date().toISOString().replace("T", " ").replace("Z", "");
-    // アイコンも一緒に送信
-    const logLine = { timestamp, userName, userIcon, msg };
+    const timestamp = new Date()
+      .toISOString()
+      .replace("T", " ")
+      .replace("Z", "");
+    const logLine = `[${timestamp}] ${userName}: ${msg.text}`;
 
-    fs.appendFile(
-      "chatlog.txt",
-      `[${timestamp}] ${userName}: ${msg}\n`,
-      (err) => {
-        if (err) console.error("ログ保存エラー:", err);
-      }
-    );
+    fs.appendFile("chatlog.txt", logLine + "\n", (err) => {
+      if (err) console.error("ログ保存エラー:", err);
+    });
 
-    io.emit("chat message", logLine);
+    io.emit("chat message", {
+      text: `[${timestamp}] ${userName}: ${msg.text}`,
+      icon: userIcon,
+      system: false,
+    });
+  });
+
+  socket.on("change name", (data) => {
+    const oldName = userName;
+    userName = data.name || userName;
+    userIcon = data.icon || userIcon;
+    io.emit("chat message", {
+      text: `[サーバー] 名前を変更しました。`,
+      icon: "/初期アイコン.webp",
+      system: true,
+    });
   });
 
   socket.on("disconnect", () => {
     if (userName) {
-      io.emit("chat message", `[サーバー] ${userName}さんが退出しました`);
+      io.emit("chat message", {
+        text: `[サーバー] ${userName}さんが退出しました`,
+        icon: "/初期アイコン.webp",
+        system: true,
+      });
     }
     console.log("ユーザーが切断しました:", userName);
   });
 });
 
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`サーバー起動: http://localhost:${PORT}`);
+  console.log(`サーバー起動中: http://localhost:${PORT}`);
 });
