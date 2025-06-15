@@ -36,10 +36,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("chat message", (msg) => {
-    const timestamp = new Date()
-      .toISOString()
-      .replace("T", " ")
-      .replace("Z", "");
+    const date = new Date();
+    const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000); // UTC+9時間（日本時間）
+    const timestamp = jstDate.toISOString().replace("T", " ").replace("Z", "");
+
     const logLine = `[${timestamp}] ${userName}: ${msg.text}`;
 
     fs.appendFile("chatlog.txt", logLine + "\n", (err) => {
