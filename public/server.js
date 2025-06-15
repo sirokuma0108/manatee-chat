@@ -12,22 +12,19 @@ app.use(express.static("public"));
 io.on("connection", (socket) => {
   console.log("ユーザーが接続しました");
 
-  // 過去ログ送信
-  fs.readFile("chatlog.txt", "utf-8", (err, data) => {
-    if (!err && data) {
-      const lines = data.trim().split("\n");
-      lines.forEach((line) => {
-        socket.emit("chat message", line);
-      });
-    }
+  let userName = "";
+
+  // ユーザー名セット受信
+  socket.on("set name", (name) => {
+    userName = name || "名無し";
+    socket.emit("chat message", `[サーバー] ようこそ、${userName}さん！`);
+    socket.broadcast.emit("chat message", `[サーバー] ${userName}さんが入室しました`);
   });
 
-  // メッセージ受信
   socket.on("chat message", (msg) => {
     const timestamp = new Date().toISOString().replace("T", " ").replace("Z", "");
-    const logLine = `[${timestamp}] ${msg}`;
+    const logLine = `[${timestamp}] ${userName}: ${msg}`;
 
-    // ログに追記
     fs.appendFile("chatlog.txt", logLine + "\n", (err) => {
       if (err) console.error("ログ保存エラー:", err);
     });
@@ -36,6 +33,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    if (userName) {
+      io.emit("chat message", `[サーバー] ${userName}さんが退出しました`);
+    }
     console.log("ユーザーが切断しました");
   });
 });
