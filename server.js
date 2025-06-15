@@ -22,7 +22,7 @@ io.on("connection", (socket) => {
 
   socket.on("set name", (name) => {
     userName = name || "名無し";
-    console.log(`ユーザー名セット: ${userName}`);
+    console.log(`ユーザーが入室しました: ${userName}`);
 
     // 入室メッセージ
     socket.emit("chat message", `[サーバー] ようこそ、${userName}さん！`);
