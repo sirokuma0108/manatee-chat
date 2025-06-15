@@ -1,82 +1,28 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>チャットアプリ</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-  }
-  #loginArea, #chatArea {
-    max-width: 600px;
-    margin: auto;
-  }
-  #chatArea {
-    display: none;
-  }
-  ul {
-    padding: 0;
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-  }
-  li {
-    list-style: none;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    font-size: 18px;
-  }
-  li.system {
-    font-style: italic;
-    color: gray;
-    justify-content: center;
-  }
-  img.icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 10px;
-  }
-  input[type="text"] {
-    padding: 8px;
-    font-size: 16px;
-  }
-  button {
-    padding: 8px 12px;
-    font-size: 16px;
-  }
-  #iconPreview {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin-left: 10px;
-    vertical-align: middle;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>チャット</title>
+  <style>
+    body { font-family: sans-serif; }
+    #messages { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
+    #messages li.system { color: gray; font-style: italic; }
+  </style>
 </head>
 <body>
-  <div id="loginArea">
-    <h2>ユーザー名を入力してください</h2>
-    <input id="nameInput" type="text" placeholder="ユーザー名" />
-    <input id="iconInput" type="file" accept="image/*" />
-    <img id="iconPreview" src="/初期アイコン.webp" alt="アイコンプレビュー" />
-    <button id="loginBtn">確定</button>
+  <div id="nameEntry">
+    <input id="nameInput" type="text" placeholder="ユーザー名を入力してください" />
+    <button id="nameSetBtn">確定</button>
   </div>
 
-  <div id="chatArea">
-    <h2>チャットルーム</h2>
-    <form id="form" autocomplete="off">
-      <input id="input" autocomplete="off" placeholder="メッセージを入力" />
-      <button>送信</button>
-    </form>
-    <ul id="messages"></ul>
-    <button id="changeNameBtn">名前・アイコン変更</button>
-  </div>
+  <ul id="messages" style="display:none;"></ul>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+  <form id="form" style="display:none;">
+    <input id="input" autocomplete="off" />
+    <button>送信</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

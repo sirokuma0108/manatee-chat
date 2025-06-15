@@ -3,12 +3,6 @@ const socket = io();
 let myUUID = null;
 let myName = "";
 
-// UUIDをサーバーから受信
-socket.on("your uuid", (uuid) => {
-  myUUID = uuid;
-  console.log("あなたのUUID:", myUUID);
-});
-
 const nameEntry = document.getElementById("nameEntry");
 const nameInput = document.getElementById("nameInput");
 const nameSetBtn = document.getElementById("nameSetBtn");
@@ -35,6 +29,11 @@ form.addEventListener("submit", (e) => {
   if (!input.value.trim()) return;
   socket.emit("chat message", { text: input.value });
   input.value = "";
+});
+
+socket.on("your uuid", (uuid) => {
+  myUUID = uuid;
+  console.log("あなたのUUID:", myUUID);
 });
 
 socket.on("chat message", (msg) => {
