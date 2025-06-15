@@ -1,24 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>ミニDiscord</title>
-    <style>
-        body { font-family: sans-serif; }
-        #messages { list-style: none; padding: 0; height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; }
-        #form { display: flex; }
-        #input { flex: 1; padding: 10px; }
-        #send { padding: 10px; }
-    </style>
+<meta charset="UTF-8" />
+<title>チャットアプリ</title>
+<style>
+  #messages { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; }
+  #form { display: flex; margin-top: 10px; }
+  #input { flex-grow: 1; padding: 8px; }
+  button { padding: 8px 12px; }
+</style>
 </head>
 <body>
-    <h1>ミニDiscord</h1>
-    <ul id="messages"></ul>
-    <form id="form">
-        <input id="input" autocomplete="off" placeholder="メッセージを入力..." />
-        <button id="send">送信</button>
-    </form>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+  <ul id="messages"></ul>
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="メッセージを入力..." />
+    <button>送信</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
