@@ -1,30 +1,39 @@
 const socket = io();
+
+const loginDiv = document.getElementById("login");
+const chatDiv = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
+
 const usernameInput = document.getElementById("username");
-const iconUpload = document.getElementById("iconUpload");
+const startButton = document.getElementById("start");
+const changeNameButton = document.getElementById("changeName");
 
-let user = {
-  name: "",
-  icon: "",
-};
+let userName = "";
 
-function askUserInfo() {
-  let name = "";
-  while (!name) {
-    name = prompt("ユーザー名を入力してください");
+// 名前確定ボタン押したらチャット画面へ
+startButton.addEventListener("click", () => {
+  const name = usernameInput.value.trim();
+  if (name) {
+    const isRename = !!userName; // 既に名前があれば変更扱い
+    userName = name;
+    socket.emit("set name", userName, isRename);
+    loginDiv.style.display = "none";
+    chatDiv.style.display = "block";
   }
-  user.name = name;
-}
+});
 
-askUserInfo();
-sendUserData();
+// 名前変更ボタン
+changeNameButton.addEventListener("click", () => {
+  const newName = prompt("新しいユーザー名を入力してください");
+  if (newName && newName.trim()) {
+    socket.emit("set name", newName.trim(), true);
+    userName = newName.trim();
+  }
+});
 
-function sendUserData() {
-  socket.emit("set user", user);
-}
-
+// チャット送信
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   if (input.value) {
@@ -33,45 +42,13 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-socket.on("chat message", (data) => {
+// 受信したメッセージを表示
+socket.on("chat message", (msg) => {
   const li = document.createElement("li");
-  const container = document.createElement("div");
-  container.classList.add("chat-message");
-
-  if (data.icon) {
-    const img = document.createElement("img");
-    img.src = data.icon;
-    container.appendChild(img);
-  }
-
-  const text = document.createElement("span");
-  text.textContent = `${data.name}: ${data.message}`;
-  container.appendChild(text);
-
-  li.appendChild(container);
+  li.textContent = msg;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-usernameInput.addEventListener("change", () => {
-  user.name = usernameInput.value;
-  sendUserData();
-});
-
-iconUpload.addEventListener("change", () => {
-  const file = iconUpload.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("icon", file);
-
-  fetch("/upload", {
-    method: "POST",
-    body: formData,
-  })
-    .then(res => res.json())
-    .then(data => {
-      user.icon = data.filePath;
-      sendUserData();
-    });
-});
+// 最初にログイン画面を表示
+loginDiv.style.display = "block";

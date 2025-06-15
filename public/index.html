@@ -4,32 +4,30 @@
   <meta charset="UTF-8" />
   <title>チャットアプリ</title>
   <style>
-    #messages li {
-      list-style: none;
-      margin: 8px 0;
-    }
-    .chat-message {
-      display: flex;
-      align-items: center;
-    }
-    .chat-message img {
-      width: 32px;
-      height: 32px;
-      margin-right: 8px;
-      border-radius: 50%;
-    }
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    #login, #chat { display: none; padding: 20px; }
+    #messages { list-style: none; padding: 0; height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; }
   </style>
 </head>
 <body>
-  <ul id="messages"></ul>
-  <form id="form">
-    <input id="input" autocomplete="off" placeholder="メッセージを入力" />
-    <button>送信</button>
-  </form>
-  <br />
-  <input type="text" id="username" placeholder="ユーザー名を変更" />
-  <input type="file" id="iconUpload" accept="image/*" />
+  <!-- ユーザー名入力画面 -->
+  <div id="login">
+    <h2>ユーザー名を入力</h2>
+    <input id="username" placeholder="名前を入力">
+    <button id="start">確定</button>
+  </div>
+
+  <!-- チャット画面 -->
+  <div id="chat">
+    <ul id="messages"></ul>
+    <form id="form">
+      <input id="input" autocomplete="off" placeholder="メッセージを入力"/>
+      <button>送信</button>
+    </form>
+    <button id="changeName">名前を変更</button>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>
