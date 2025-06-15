@@ -62,7 +62,7 @@ io.on("connection", (socket) => {
     userName = name || "名無し";
 
     if (isRename && oldName && oldName !== userName) {
-      socket.emit("chat message", `[サーバー] 名前を変更しました。`);
+      socket.emit("chat message", `[サーバー] ${oldName}さんが${userName}に名前を変更しました。`);
       socket.broadcast.emit("chat message", `[サーバー] ${oldName}さんが名前を変更しました`);
     } else {
       socket.emit("chat message", `[サーバー] ようこそ、${userName}さん！`);
