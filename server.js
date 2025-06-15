@@ -55,7 +55,7 @@ io.on("connection", (socket) => {
   console.log("ユーザーが接続しました:", socket.id);
 
   let userName = "";
-  let userIcon = "/default-icon.png"; // デフォルトアイコン（publicに置いておく）
+  let userIcon = C:\Users\kosei\Downloads\初期アイコン.webp; // デフォルトアイコン（publicに置いておく）
 
   socket.on("set name", (name, isRename) => {
     const oldName = userName;
