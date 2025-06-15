@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>チャットアプリ</title>
+  <meta charset="UTF-8">
+  <title>チャット</title>
   <style>
-    body { font-family: Arial; max-width: 600px; margin: auto; padding: 10px; }
-    #messages { list-style: none; padding: 0; height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; }
-    #form { display: flex; gap: 10px; }
-    #input { flex: 1; padding: 10px; }
-    button { padding: 10px 20px; }
+    body { font-family: sans-serif; margin: 20px; }
+    #messages li { margin: 5px 0; }
+    .msg { display: flex; align-items: center; }
+    .msg img { width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; }
+    .system { color: gray; }
   </style>
 </head>
 <body>
   <h1>チャット</h1>
+  <input type="text" id="name" placeholder="名前">
+  <input type="file" id="icon" accept="image/*">
+  <button id="setUser">設定</button>
+
   <ul id="messages"></ul>
   <form id="form">
-    <input id="input" autocomplete="off" placeholder="メッセージを入力" />
-    <button type="submit">送信</button>
+    <input id="input" autocomplete="off"><button>送信</button>
   </form>
 
   <script src="/socket.io/socket.io.js"></script>

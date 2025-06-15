@@ -1,51 +1,70 @@
 const express = require("express");
-const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
+const http = require("http");
+const { Server } = require("socket.io");
 const fs = require("fs");
+const multer = require("multer");
 const path = require("path");
 
-// publicフォルダを静的ファイルとして配信
-app.use(express.static(path.join(__dirname, "public")));
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-// サーバー起動
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`サーバーがポート${PORT}で起動しました`);
+const upload = multer({
+  dest: path.join(__dirname, "public/uploads"),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MBまで
 });
 
-// クライアント接続処理
+app.use(express.static("public"));
+
+// アイコンアップロードエンドポイント
+app.post("/upload", upload.single("icon"), (req, res) => {
+  if (!req.file) return res.status(400).send("ファイルがありません");
+  const ext = path.extname(req.file.originalname);
+  const newPath = req.file.path + ext;
+  fs.renameSync(req.file.path, newPath);
+  const fileUrl = "/uploads/" + path.basename(newPath);
+  res.send({ url: fileUrl });
+});
+
 io.on("connection", (socket) => {
-  console.log("ユーザーが接続しました:", socket.id);
+  console.log("接続:", socket.id);
+  let user = { name: "名無し", icon: null };
 
-  let userName = "";
+  socket.on("set user", (data) => {
+    user.name = data.name || "名無し";
+    user.icon = data.icon || null;
 
-  socket.on("set name", (name) => {
-    userName = name || "名無し";
-    console.log(`ユーザーが入室しました: ${userName}`);
+    socket.emit("chat message", {
+      system: true,
+      text: `[サーバー] ようこそ、${user.name}さん！`,
+    });
 
-    // 入室メッセージ
-    socket.emit("chat message", `[サーバー] ようこそ、${userName}さん！`);
-    socket.broadcast.emit("chat message", `[サーバー] ${userName}さんが入室しました`);
+    socket.broadcast.emit("chat message", {
+      system: true,
+      text: `[サーバー] ${user.name}さんが入室しました`,
+    });
   });
 
   socket.on("chat message", (msg) => {
-    const timestamp = new Date().toISOString().replace("T", " ").replace("Z", "");
-    const logLine = `[${timestamp}] ${userName}: ${msg}`;
-
-    // チャットログを保存
-    fs.appendFile("chatlog.txt", logLine + "\n", (err) => {
-      if (err) console.error("ログ保存エラー:", err);
+    const time = new Date().toLocaleTimeString();
+    io.emit("chat message", {
+      user: user.name,
+      icon: user.icon,
+      time,
+      text: msg,
     });
-
-    // 全員に送信
-    io.emit("chat message", logLine);
   });
 
   socket.on("disconnect", () => {
-    if (userName) {
-      io.emit("chat message", `[サーバー] ${userName}さんが退出しました`);
-    }
-    console.log("ユーザーが切断しました:", userName);
+    io.emit("chat message", {
+      system: true,
+      text: `[サーバー] ${user.name}さんが退出しました`,
+    });
+    console.log("切断:", user.name);
   });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`サーバー起動: http://localhost:${PORT}`);
 });
