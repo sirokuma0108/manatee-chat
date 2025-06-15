@@ -8,7 +8,7 @@
       list-style-type: none;
       padding: 0;
       max-height: 300px;
-      overflow-y: scroll;
+      overflow-y: auto;
       border: 1px solid #ccc;
     }
     #input {
@@ -19,11 +19,11 @@
 <body>
   <ul id="messages"></ul>
   <form id="form" action="">
-    <input id="input" autocomplete="off" />
+    <input id="input" autocomplete="off" placeholder="メッセージを入力" />
     <button>送信</button>
   </form>
 
-  <!-- socket.io クライアント読み込み -->
+  <!-- socket.ioクライアントライブラリ -->
   <script src="/socket.io/socket.io.js"></script>
   <!-- 自作スクリプト -->
   <script src="script.js"></script>
