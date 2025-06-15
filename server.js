@@ -1,82 +1,91 @@
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io");
-const fs = require("fs");
 const path = require("path");
+const fs = require("fs");
+const { Server } = require("socket.io");
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static("public"));
+const PORT = 3000;
+
+// ユーザーごとのUUIDを保持（socket.id → uuid）
+const userUUIDs = {};
+
+// UUID → 名前
+const userNames = {};
+
+app.use(express.static(path.join(__dirname, "public")));
 
 io.on("connection", (socket) => {
-  console.log("ユーザーが接続しました:", socket.id);
+  console.log("接続:", socket.id);
 
-  let userName = "";
-  let userIcon = "/初期アイコン.webp";  // デフォルトアイコン
+  // 新規UUID生成（本来はCookieやlocalStorageからの再利用もあり得るが今回は省略）
+  const uuid = uuidv4();
+  userUUIDs[socket.id] = uuid;
 
-  socket.on("set name", (data) => {
-    userName = data.name || "名無し";
-    userIcon = data.icon || "/初期アイコン.webp";
+  // 初期名前は名無し
+  userNames[uuid] = "名無し";
 
-    console.log(`ユーザー名セット: ${userName}, アイコン: ${userIcon}`);
+  // クライアントにUUIDを通知（本人識別用）
+  socket.emit("your uuid", uuid);
 
-    socket.emit("chat message", {
-      text: `[サーバー] ようこそ、${userName}さん！`,
-      icon: "/初期アイコン.webp",
-      system: true,
-    });
-
-    socket.broadcast.emit("chat message", {
-      text: `[サーバー] ${userName}さんが入室しました`,
-      icon: "/初期アイコン.webp",
-      system: true,
-    });
+  // 名前変更受信
+  socket.on("set name", (name) => {
+    if (typeof name === "string" && name.trim().length > 0) {
+      userNames[uuid] = name.trim();
+      // 名前変更通知
+      socket.emit("chat message", {
+        system: true,
+        text: `[サーバー] 名前を「${userNames[uuid]}」に変更しました。`,
+      });
+      socket.broadcast.emit("chat message", {
+        system: true,
+        text: `[サーバー] ${userNames[uuid]}さん（ID: ${uuid.slice(0, 6)}）に名前変更しました。`,
+      });
+    }
   });
 
-  socket.on("chat message", (msg) => {
-    const date = new Date();
-    const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000); // UTC+9時間（日本時間）
-    const timestamp = jstDate.toISOString().replace("T", " ").replace("Z", "");
+  // 入室通知
+  io.emit("chat message", {
+    system: true,
+    text: `[サーバー] ${userNames[uuid]}さん（ID: ${uuid.slice(0, 6)}）が入室しました。`,
+  });
 
-    const logLine = `[${timestamp}] ${userName}: ${msg.text}`;
+  // メッセージ受信
+  socket.on("chat message", (msg) => {
+    const timestamp = new Date(Date.now() + 9 * 60 * 60 * 1000)
+      .toISOString()
+      .replace("T", " ")
+      .slice(0, 19);
+
+    const userName = userNames[uuid] || "名無し";
+    const logLine = `[${timestamp}] ${userName}(${uuid.slice(0, 6)}): ${msg.text}`;
 
     fs.appendFile("chatlog.txt", logLine + "\n", (err) => {
       if (err) console.error("ログ保存エラー:", err);
     });
 
     io.emit("chat message", {
-      text: `[${timestamp}] ${userName}: ${msg.text}`,
-      icon: userIcon,
       system: false,
-    });
-  });
-
-  socket.on("change name", (data) => {
-    const oldName = userName;
-    userName = data.name || userName;
-    userIcon = data.icon || userIcon;
-    io.emit("chat message", {
-      text: `[サーバー] 名前を変更しました。`,
-      icon: "/初期アイコン.webp",
-      system: true,
+      text: logLine,
+      uuid,
     });
   });
 
   socket.on("disconnect", () => {
-    if (userName) {
-      io.emit("chat message", {
-        text: `[サーバー] ${userName}さんが退出しました`,
-        icon: "/初期アイコン.webp",
-        system: true,
-      });
-    }
-    console.log("ユーザーが切断しました:", userName);
+    io.emit("chat message", {
+      system: true,
+      text: `[サーバー] ${userNames[uuid] || "名無し"}さん（ID: ${uuid.slice(0, 6)}）が退出しました。`,
+    });
+    delete userNames[uuid];
+    delete userUUIDs[socket.id];
+    console.log("切断:", socket.id);
   });
 });
 
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`サーバー起動中: http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
