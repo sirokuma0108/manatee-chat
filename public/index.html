@@ -2,32 +2,54 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>チャットアプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>チャットアプリ with アイコン</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; }
-    #login, #chat { display: none; padding: 20px; }
-    #messages { list-style: none; padding: 0; height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; }
+    #chat {
+      display: none;
+    }
+    #messages {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    li {
+      list-style: none;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+    }
+    img.icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
   </style>
 </head>
 <body>
-  <!-- ユーザー名入力画面 -->
   <div id="login">
-    <h2>ユーザー名を入力</h2>
-    <input id="username" placeholder="名前を入力">
-    <button id="start">確定</button>
+    <h3>ユーザー名入力</h3>
+    <input id="usernameInput" type="text" placeholder="ユーザー名" />
+    <button id="usernameSubmit">確定</button>
   </div>
 
-  <!-- チャット画面 -->
   <div id="chat">
-    <ul id="messages"></ul>
+    <div>
+      <img id="currentIcon" src="/default-icon.png" alt="icon" class="icon" />
+      <input type="file" id="iconUpload" accept="image/*" />
+      <button id="changeNameBtn">名前変更</button>
+    </div>
+
     <form id="form">
-      <input id="input" autocomplete="off" placeholder="メッセージを入力"/>
-      <button>送信</button>
+      <input id="input" autocomplete="off" /><button>送信</button>
     </form>
-    <button id="changeName">名前を変更</button>
+
+    <ul id="messages"></ul>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/script.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
