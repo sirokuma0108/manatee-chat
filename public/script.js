@@ -8,6 +8,7 @@ let userName = "";
 while (!userName) {
   userName = prompt("ユーザー名を入力してください");
 }
+
 console.log("ユーザー名送信:", userName);
 socket.emit("set name", userName);
 
